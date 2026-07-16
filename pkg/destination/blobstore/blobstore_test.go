@@ -260,6 +260,16 @@ func TestParseBlobstoreURI_AzureDatalake(t *testing.T) {
 	}
 }
 
+func TestParseS3DestURICredentials(t *testing.T) {
+	parsed, err := parseBlobstoreURI("s3://?access_key_id=AKID&secret_access_key=SECRET&session_token=TOK&region=eu-west-1&profile=prod")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if parsed.sessionToken != "TOK" || parsed.profile != "prod" {
+		t.Fatalf("sessionToken/profile = %q/%q", parsed.sessionToken, parsed.profile)
+	}
+}
+
 func TestParseBlobstoreURI_UnsupportedScheme(t *testing.T) {
 	_, err := parseBlobstoreURI("ftp://bucket/path")
 	require.Error(t, err)

@@ -22,10 +22,9 @@ import (
 	"github.com/apache/arrow-go/v18/parquet/compress"
 	"github.com/apache/arrow-go/v18/parquet/pqarrow"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/bruin-data/ingestr/internal/adlsutil"
+	"github.com/bruin-data/ingestr/internal/awscreds"
 	"github.com/bruin-data/ingestr/internal/config"
 	"github.com/bruin-data/ingestr/pkg/destination"
 	"github.com/bruin-data/ingestr/pkg/schema"
@@ -116,21 +115,14 @@ func (d *BlobstoreDestination) Connect(ctx context.Context, uri string) error {
 }
 
 func createS3Client(ctx context.Context, parsed *parsedBlobstoreURI) (*s3.Client, error) {
-	var opts []func(*awsconfig.LoadOptions) error
-
-	if parsed.accessKeyID != "" && parsed.secretAccessKey != "" {
-		opts = append(opts, awsconfig.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(parsed.accessKeyID, parsed.secretAccessKey, ""),
-		))
-	}
-
-	if parsed.region != "" {
-		opts = append(opts, awsconfig.WithRegion(parsed.region))
-	} else {
-		opts = append(opts, awsconfig.WithRegion("us-east-1"))
-	}
-
-	cfg, err := awsconfig.LoadDefaultConfig(ctx, opts...)
+	cfg, err := awscreds.Credentials{
+		AccessKeyID:     parsed.accessKeyID,
+		SecretAccessKey: parsed.secretAccessKey,
+		SessionToken:    parsed.sessionToken,
+		Region:          parsed.region,
+		Profile:         parsed.profile,
+		DefaultRegion:   "us-east-1",
+	}.LoadConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -609,6 +601,8 @@ type parsedBlobstoreURI struct {
 	provider          Provider
 	accessKeyID       string
 	secretAccessKey   string
+	sessionToken      string
+	profile           string
 	region            string
 	endpointURL       string
 	credentialsFile   string
@@ -632,6 +626,8 @@ func parseBlobstoreURI(uri string) (*parsedBlobstoreURI, error) {
 		parsed.provider = ProviderS3
 		parsed.accessKeyID = u.Query().Get("access_key_id")
 		parsed.secretAccessKey = u.Query().Get("secret_access_key")
+		parsed.sessionToken = u.Query().Get("session_token")
+		parsed.profile = u.Query().Get("profile")
 		parsed.region = u.Query().Get("region")
 		parsed.endpointURL = u.Query().Get("endpoint_url")
 	case "gs", "gcs":
