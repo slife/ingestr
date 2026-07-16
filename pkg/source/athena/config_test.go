@@ -23,7 +23,26 @@ func TestParseAthenaConfig_RequiresBucket(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestParseAthenaConfig_RequiresCredentialsOrProfile(t *testing.T) {
-	_, err := parseAthenaConfig("athena://?bucket=my-bucket&region_name=us-east-1")
-	require.Error(t, err)
+func TestParseAthenaConfigKeylessAllowed(t *testing.T) {
+	cfg, err := parseAthenaConfig("athena://mydb?bucket=my-bucket&region_name=us-east-1")
+	if err != nil {
+		t.Fatalf("keyless config should be allowed, got: %v", err)
+	}
+	if cfg.AccessKeyID != "" || cfg.SecretAccessKey != "" {
+		t.Fatalf("expected empty creds")
+	}
+}
+
+func TestParseAthenaConfigLoneKeyRejected(t *testing.T) {
+	_, err := parseAthenaConfig("athena://mydb?bucket=my-bucket&region_name=us-east-1&access_key_id=AKID")
+	if err == nil {
+		t.Fatal("lone access_key_id should be rejected")
+	}
+}
+
+func TestParseAthenaConfigBucketRequired(t *testing.T) {
+	_, err := parseAthenaConfig("athena://mydb?region_name=us-east-1")
+	if err == nil {
+		t.Fatal("missing bucket should be rejected")
+	}
 }
