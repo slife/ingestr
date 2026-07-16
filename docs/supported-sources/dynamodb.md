@@ -13,15 +13,20 @@ dynamodb://dynamodb.<region>.amazonaws.com?access_key_id=<aws_access_key_id>&sec
 
 URI parameters:
 
-- `access_key_id`: Identifies an IAM account. 
-- `secret_access_key`: Password for the IAM account.
+- `access_key_id` (optional): Identifies an IAM account.
+- `secret_access_key` (optional): Password for the IAM account.
+- `session_token` (optional): AWS session token, for temporary STS credentials.
+- `profile` (optional): Name of an AWS shared-config profile to use for credentials/region.
+- `region` (optional): AWS region, if not already present in the host as `dynamodb.<region>.amazonaws.com`.
 
 The same URI structure can be used both for sources and destinations.
+
+**Credentials are optional.** When `access_key_id`/`secret_access_key` are omitted, ingestr resolves credentials through the standard AWS default credential chain: environment variables, a shared AWS config/credentials file (optionally selected with `profile`), EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. You may also supply a `session_token` for temporary STS credentials. The region is taken from the URI host (`dynamodb.<region>.amazonaws.com`) or the `region` parameter first, then from the ambient environment (`AWS_REGION` or the selected profile); if it still cannot be resolved, ingestr returns an error, since this connector requires an explicit region.
 
 ## Setting up a DynamoDB integration
 
 ### Prerequisites
-* AWS IAM access key pair.
+* AWS credentials via access key pair, or an ambient role (env / profile / IRSA / instance profile).
 * A DynamoDB table that you want to load data from or into.
 
 To obtain the access keys, use the IAM console on AWS. See [IAM Documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html) for more information.

@@ -36,13 +36,13 @@ Amazon Kinesis is a cloud-based service for real-time data streaming and analyti
 Ensure `ingestr` is installed. If not, follow the installation guide [here](../getting-started/quickstart.md#Installation).
 
 ### Step 2: Get AWS Credentials
-Kinesis will be our data source. To access it, you need AWS credentials.
+Kinesis will be our data source. To access it, you can use AWS credentials, or rely on ambient credentials (default credential chain / IRSA) if `ingestr` is running on EKS, ECS, or EC2.
 
 1. Log in to your AWS account.
 2. Navigate to `IAM` (Identity and Access Management).
-3. Create a new IAM user or select an existing one.
+3. Create a new IAM user or select an existing one (or, on EKS/EC2, attach the needed permissions to the pod/instance role instead).
 4. Assign necessary permissions (e.g., `AmazonKinesisReadOnlyAccess`).
-5. Generate and copy the `Access Key ID` and `Secret Access Key`.
+5. Generate and copy the `Access Key ID` and `Secret Access Key` (skip this step if you're using an ambient role).
 
 For more details, read [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html).
 
@@ -55,10 +55,12 @@ This flag connects to your Kinesis stream. The URI format is:
 kinesis://?aws_access_key_id=<YOUR_KEY_ID>&aws_secret_access_key=<YOUR_SECRET_KEY>&region_name=<YOUR_REGION>
 ```
 
-Required parameters:
-- `aws_access_key_id`: Your AWS access key
-- `aws_secret_access_key`: Your AWS secret key
-- `region_name`: AWS region of your Kinesis stream
+Parameters:
+- `aws_access_key_id` (optional): Your AWS access key
+- `aws_secret_access_key` (optional): Your AWS secret key
+- `region_name` (required): AWS region of your Kinesis stream
+
+`aws_access_key_id`/`aws_secret_access_key` are optional — if omitted, ingestr resolves credentials through the AWS default credential chain (environment variables, shared config profile, EKS IRSA / web-identity roles, or ECS/EC2 instance-profile roles). `region_name` is still required.
 
 #### `--source-table`
 This flag specifies which Kinesis stream to read from:

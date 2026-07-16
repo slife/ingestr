@@ -31,7 +31,8 @@ Common URI parameters:
 - `prefix` (optional): path prefix inside the bucket.
 - `endpoint` (optional): S3-compatible endpoint such as `localhost:9000`.
 - `use_ssl=false` (optional): use plain HTTP for S3-compatible local storage.
-- `access_key_id`, `secret_access_key`, `session_token`, `region`: S3 or Glue credentials and region aliases.
+- `access_key_id`, `secret_access_key`, `session_token` (all optional): S3 or Glue credentials. When `access_key_id`/`secret_access_key` are omitted, ingestr delegates to the iceberg-go client's default AWS credential resolution — the same chain used elsewhere: environment variables, a shared AWS config/credentials file, EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles.
+- `region` (also accepted as `region_name`): AWS region for S3 and Glue. Taken from the URI first, then from the ambient environment (`AWS_REGION` or the shared config profile); if it still cannot be resolved, ingestr falls back to `us-east-1`.
 - `warehouse`: advanced override for the Iceberg warehouse location, such as `s3://bucket/warehouse`.
 - `warehouse_path`: local warehouse path alias for non-S3 catalog setups.
 - `create_namespace` (optional): create the destination namespace automatically. Defaults to `true`.
