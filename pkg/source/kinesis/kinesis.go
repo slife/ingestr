@@ -90,6 +90,9 @@ func (s *KinesisSource) Connect(ctx context.Context, uri string) error {
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
 	}
+	if awsCfg.Region == "" {
+		return fmt.Errorf("kinesis URI: region_name is required")
+	}
 
 	s.client = kinesis.NewFromConfig(awsCfg, func(o *kinesis.Options) {
 		if creds.EndpointURL != "" {
@@ -130,9 +133,6 @@ func parseKinesisURI(raw string) (kinesisCredentials, error) {
 
 	if (creds.AccessKeyID == "") != (creds.SecretAccessKey == "") {
 		return kinesisCredentials{}, fmt.Errorf("kinesis URI: both aws_access_key_id and aws_secret_access_key are required when using static credentials")
-	}
-	if creds.Region == "" {
-		return kinesisCredentials{}, fmt.Errorf("kinesis URI: region_name is required")
 	}
 
 	return creds, nil

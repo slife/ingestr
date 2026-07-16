@@ -75,9 +75,13 @@ func TestParseURI(t *testing.T) {
 			},
 		},
 		{
-			name:    "missing region",
-			uri:     "dynamodb://localhost:8000?access_key_id=AKID&secret_access_key=SECRET",
-			wantErr: true,
+			name: "no region parses; region enforced at client build",
+			uri:  "dynamodb://localhost:8000?access_key_id=AKID&secret_access_key=SECRET",
+			check: func(t *testing.T, cfg *dynamodbutil.Config) {
+				if cfg.Region != "" {
+					t.Errorf("Region = %q, want empty", cfg.Region)
+				}
+			},
 		},
 		{
 			name: "region in query param",

@@ -82,6 +82,19 @@ func TestParseSQSURI(t *testing.T) {
 	}
 }
 
+func TestParseSQSURILoneKeyParses(t *testing.T) {
+	cfg, err := parseSQSURI("sqs://?region=us-east-1&access_key_id=AKID")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.AccessKeyID != "AKID" {
+		t.Fatalf("AccessKeyID = %q, want AKID", cfg.AccessKeyID)
+	}
+	if cfg.SecretAccessKey != "" {
+		t.Fatalf("SecretAccessKey = %q, want empty", cfg.SecretAccessKey)
+	}
+}
+
 func TestParseSQSURIProfile(t *testing.T) {
 	cfg, err := parseSQSURI("sqs://?region=us-east-1&profile=prod")
 	if err != nil {

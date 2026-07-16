@@ -48,9 +48,6 @@ func ParseURI(uri string) (*Config, error) {
 		cfg.Region = query.Get("region")
 	}
 
-	if cfg.Region == "" {
-		return nil, fmt.Errorf("region is required to connect to DynamoDB")
-	}
 	if (cfg.AccessKeyID == "") != (cfg.SecretAccessKey == "") {
 		return nil, fmt.Errorf("both access_key_id and secret_access_key are required when using static credentials")
 	}
@@ -68,6 +65,9 @@ func NewClient(ctx context.Context, cfg *Config) (*dynamodb.Client, error) {
 	}.LoadConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+	if awsCfg.Region == "" {
+		return nil, fmt.Errorf("region is required to connect to DynamoDB")
 	}
 
 	client := dynamodb.NewFromConfig(awsCfg, func(o *dynamodb.Options) {

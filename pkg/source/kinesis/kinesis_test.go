@@ -75,9 +75,13 @@ func TestParseKinesisURI(t *testing.T) {
 			},
 		},
 		{
-			name:    "missing region",
-			uri:     "kinesis://?aws_access_key_id=AKID&aws_secret_access_key=SECRET",
-			wantErr: true,
+			name: "no region parses; region enforced at client build",
+			uri:  "kinesis://?aws_access_key_id=AKID&aws_secret_access_key=SECRET",
+			check: func(t *testing.T, c kinesisCredentials) {
+				if c.Region != "" {
+					t.Errorf("Region = %q, want empty", c.Region)
+				}
+			},
 		},
 	}
 
