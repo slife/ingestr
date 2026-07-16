@@ -13,10 +13,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
+	"github.com/bruin-data/ingestr/internal/awscreds"
 	"github.com/bruin-data/ingestr/internal/config"
 	"github.com/bruin-data/ingestr/pkg/arrowconv"
 	"github.com/bruin-data/ingestr/pkg/schema"
@@ -40,6 +39,7 @@ type kinesisCredentials struct {
 	SecretAccessKey string
 	SessionToken    string
 	Region          string
+	Profile         string
 	EndpointURL     string
 }
 
@@ -80,14 +80,13 @@ func (s *KinesisSource) Connect(ctx context.Context, uri string) error {
 	}
 	s.creds = creds
 
-	loadOpts := []func(*awsconfig.LoadOptions) error{
-		awsconfig.WithRegion(creds.Region),
-		awsconfig.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(creds.AccessKeyID, creds.SecretAccessKey, creds.SessionToken),
-		),
-	}
-
-	awsCfg, err := awsconfig.LoadDefaultConfig(ctx, loadOpts...)
+	awsCfg, err := awscreds.Credentials{
+		AccessKeyID:     creds.AccessKeyID,
+		SecretAccessKey: creds.SecretAccessKey,
+		SessionToken:    creds.SessionToken,
+		Region:          creds.Region,
+		Profile:         creds.Profile,
+	}.LoadConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
 	}
@@ -122,17 +121,15 @@ func parseKinesisURI(raw string) (kinesisCredentials, error) {
 		SecretAccessKey: firstQuery(values, "aws_secret_access_key", "secret_access_key"),
 		SessionToken:    firstQuery(values, "aws_session_token", "session_token"),
 		Region:          firstQuery(values, "region_name", "region", "aws_region"),
+		Profile:         firstQuery(values, "aws_profile", "profile"),
 		EndpointURL:     firstQuery(values, "endpoint_url", "endpoint"),
 	}
 	if creds.EndpointURL == "" && u.Host != "" {
 		creds.EndpointURL = endpointFromHost(u.Host)
 	}
 
-	if creds.AccessKeyID == "" {
-		return kinesisCredentials{}, fmt.Errorf("kinesis URI: aws_access_key_id is required")
-	}
-	if creds.SecretAccessKey == "" {
-		return kinesisCredentials{}, fmt.Errorf("kinesis URI: aws_secret_access_key is required")
+	if (creds.AccessKeyID == "") != (creds.SecretAccessKey == "") {
+		return kinesisCredentials{}, fmt.Errorf("kinesis URI: both aws_access_key_id and aws_secret_access_key are required when using static credentials")
 	}
 	if creds.Region == "" {
 		return kinesisCredentials{}, fmt.Errorf("kinesis URI: region_name is required")
