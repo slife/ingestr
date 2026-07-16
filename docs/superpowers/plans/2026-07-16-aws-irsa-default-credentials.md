@@ -897,7 +897,10 @@ func TestGenerateS3SecretCredentialChainWhenKeyless(t *testing.T) {
 	if !strings.Contains(sql, "PROVIDER credential_chain") {
 		t.Fatalf("expected PROVIDER credential_chain, got:\n%s", sql)
 	}
-	if strings.Contains(sql, "KEY_ID") || strings.Contains(sql, "SECRET ") {
+	// Note: the header line "CREATE OR REPLACE SECRET <name> (" contains the
+	// substring "SECRET " (trailing space), so match "SECRET '" (trailing
+	// quote) to detect only a leaked `,   SECRET 'value'` config line.
+	if strings.Contains(sql, "KEY_ID") || strings.Contains(sql, "SECRET '") {
 		t.Fatalf("credential_chain secret must not embed keys, got:\n%s", sql)
 	}
 	if !strings.Contains(sql, "REGION 'us-east-1'") {
@@ -999,7 +1002,7 @@ func (l *LakehouseAttacher) generateS3Secret(name string, st StorageConfig) stri
 Run: `go test ./pkg/source/duckdb/`
 Expected: PASS.
 
-Note the `TestGenerateS3SecretCredentialChainWhenKeyless` assertion `!strings.Contains(sql, "SECRET ")` checks for `SECRET ` with a trailing space — the `credential_chain` branch never emits the `SECRET '...'` line, so this holds. (`,   SECRET ` only appears in the `config` branch.)
+Note the `TestGenerateS3SecretCredentialChainWhenKeyless` assertion checks `SECRET '` (trailing quote), NOT `SECRET ` (trailing space): the always-present header line `CREATE OR REPLACE SECRET <name> (` contains `SECRET ` with a space, so a space-only match would false-positive on every secret. Only the `config` branch's `,   SECRET 'value'` line contains `SECRET '`.
 
 - [ ] **Step 6: Commit**
 
