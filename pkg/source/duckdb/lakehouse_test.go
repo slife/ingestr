@@ -362,6 +362,13 @@ func TestParseLakehouseURIGCSStillRequiresKeys(t *testing.T) {
 	}
 }
 
+func TestParseLakehouseURIS3SessionTokenWithoutKeysRejected(t *testing.T) {
+	_, err := ParseLakehouseURI("ducklake://?catalog_type=sqlite&catalog_path=/tmp/c.db&storage_type=s3&storage_path=s3://bucket/data&storage_session_token=TOK")
+	if err == nil {
+		t.Fatal("storage_session_token without keys should be rejected (credential_chain ignores it)")
+	}
+}
+
 func TestGenerateS3SecretCredentialChainWhenKeyless(t *testing.T) {
 	l := NewLakehouseAttacher()
 	sql := l.generateS3Secret("ingestr_storage", StorageConfig{Type: StorageTypeS3, Path: "s3://bucket/data", Region: "us-east-1"})

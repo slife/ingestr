@@ -141,6 +141,9 @@ func ParseLakehouseURI(raw string) (*LakehouseConfig, error) {
 		if (cfg.Storage.AccessKey == "") != (cfg.Storage.SecretKey == "") {
 			return nil, fmt.Errorf("storage_access_key and storage_secret_key must both be set (or both omitted to use the AWS credential chain) for storage_type=s3")
 		}
+		if cfg.Storage.AccessKey == "" && cfg.Storage.SessionToken != "" {
+			return nil, fmt.Errorf("storage_session_token requires storage_access_key and storage_secret_key; omit all three to use the AWS credential chain for storage_type=s3")
+		}
 	}
 
 	if cfg.Storage.URLStyle != "" && cfg.Storage.URLStyle != "path" && cfg.Storage.URLStyle != "vhost" {

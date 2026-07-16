@@ -69,6 +69,7 @@ func NewClient(ctx context.Context, cfg *Config) (*dynamodb.Client, error) {
 	if awsCfg.Region == "" {
 		return nil, fmt.Errorf("region is required to connect to DynamoDB")
 	}
+	cfg.Region = awsCfg.Region
 
 	client := dynamodb.NewFromConfig(awsCfg, func(o *dynamodb.Options) {
 		if cfg.EndpointURL != "" {

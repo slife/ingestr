@@ -101,7 +101,7 @@ func (s *KinesisSource) Connect(ctx context.Context, uri string) error {
 	})
 	s.limiter = rate.NewLimiter(rate.Limit(getRecordsRPS), getRecordsBurst)
 
-	config.Debug("[KINESIS] Connected to region %s", creds.Region)
+	config.Debug("[KINESIS] Connected to region %s", awsCfg.Region)
 	return nil
 }
 
