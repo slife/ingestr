@@ -27,7 +27,9 @@ type Credentials struct {
 }
 
 // LoadConfig builds an aws.Config, preferring explicit input and otherwise
-// falling back to the AWS default credential chain.
+// falling back to the AWS default credential chain. DefaultRegion is applied
+// only after awsconfig.LoadDefaultConfig returns, so it never overrides a
+// region resolved from the URI or the ambient environment/profile.
 func (c Credentials) LoadConfig(ctx context.Context) (aws.Config, error) {
 	if (c.AccessKeyID == "") != (c.SecretAccessKey == "") {
 		return aws.Config{}, ErrIncompleteStaticCredentials

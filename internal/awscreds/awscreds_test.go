@@ -3,6 +3,7 @@ package awscreds
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"testing"
 )
 
@@ -10,6 +11,9 @@ func TestLoadConfig(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("static credentials are used when both keys present", func(t *testing.T) {
+		t.Setenv("AWS_PROFILE", "")
+		t.Setenv("AWS_CONFIG_FILE", filepath.Join(t.TempDir(), "no-config"))
+		t.Setenv("AWS_SHARED_CREDENTIALS_FILE", filepath.Join(t.TempDir(), "no-creds"))
 		c := Credentials{AccessKeyID: "AKID", SecretAccessKey: "SECRET", SessionToken: "TOKEN", Region: "eu-west-1"}
 		cfg, err := c.LoadConfig(ctx)
 		if err != nil {
@@ -44,6 +48,9 @@ func TestLoadConfig(t *testing.T) {
 	t.Run("default region applied only when region otherwise empty", func(t *testing.T) {
 		t.Setenv("AWS_REGION", "")
 		t.Setenv("AWS_DEFAULT_REGION", "")
+		t.Setenv("AWS_PROFILE", "")
+		t.Setenv("AWS_CONFIG_FILE", filepath.Join(t.TempDir(), "no-config"))
+		t.Setenv("AWS_SHARED_CREDENTIALS_FILE", filepath.Join(t.TempDir(), "no-creds"))
 		cfg, err := Credentials{DefaultRegion: "us-east-1"}.LoadConfig(ctx)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -54,6 +61,9 @@ func TestLoadConfig(t *testing.T) {
 	})
 
 	t.Run("uri region wins over default region", func(t *testing.T) {
+		t.Setenv("AWS_PROFILE", "")
+		t.Setenv("AWS_CONFIG_FILE", filepath.Join(t.TempDir(), "no-config"))
+		t.Setenv("AWS_SHARED_CREDENTIALS_FILE", filepath.Join(t.TempDir(), "no-creds"))
 		cfg, err := Credentials{Region: "ap-southeast-2", DefaultRegion: "us-east-1"}.LoadConfig(ctx)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -65,6 +75,9 @@ func TestLoadConfig(t *testing.T) {
 
 	t.Run("ambient region preserved when no default", func(t *testing.T) {
 		t.Setenv("AWS_REGION", "ca-central-1")
+		t.Setenv("AWS_PROFILE", "")
+		t.Setenv("AWS_CONFIG_FILE", filepath.Join(t.TempDir(), "no-config"))
+		t.Setenv("AWS_SHARED_CREDENTIALS_FILE", filepath.Join(t.TempDir(), "no-creds"))
 		cfg, err := Credentials{}.LoadConfig(ctx)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -77,6 +90,9 @@ func TestLoadConfig(t *testing.T) {
 	t.Run("empty default leaves region empty for required-region callers", func(t *testing.T) {
 		t.Setenv("AWS_REGION", "")
 		t.Setenv("AWS_DEFAULT_REGION", "")
+		t.Setenv("AWS_PROFILE", "")
+		t.Setenv("AWS_CONFIG_FILE", filepath.Join(t.TempDir(), "no-config"))
+		t.Setenv("AWS_SHARED_CREDENTIALS_FILE", filepath.Join(t.TempDir(), "no-creds"))
 		cfg, err := Credentials{}.LoadConfig(ctx)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
