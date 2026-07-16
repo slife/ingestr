@@ -25,13 +25,12 @@ import (
 	"github.com/apache/arrow-go/v18/parquet/file"
 	"github.com/apache/arrow-go/v18/parquet/pqarrow"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/athena"
 	athenatypes "github.com/aws/aws-sdk-go-v2/service/athena/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/bruin-data/ingestr/internal/adlsutil"
+	"github.com/bruin-data/ingestr/internal/awscreds"
 	"github.com/bruin-data/ingestr/internal/config"
 	"github.com/bruin-data/ingestr/pkg/arrowconv"
 	"github.com/bruin-data/ingestr/pkg/schema"
@@ -200,23 +199,17 @@ func createS3DiscoveryAthenaClient(ctx context.Context, parsed *parsedBlobstoreU
 }
 
 func loadAWSConfig(ctx context.Context, parsed *parsedBlobstoreURI, region string) (aws.Config, error) {
-	var opts []func(*awsconfig.LoadOptions) error
-
-	if parsed.accessKeyID != "" && parsed.secretAccessKey != "" {
-		opts = append(opts, awsconfig.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(parsed.accessKeyID, parsed.secretAccessKey, ""),
-		))
-	}
-
 	if region == "" {
 		region = parsed.region
 	}
-	if region == "" {
-		region = "us-east-1"
-	}
-	opts = append(opts, awsconfig.WithRegion(region))
-
-	return awsconfig.LoadDefaultConfig(ctx, opts...)
+	return awscreds.Credentials{
+		AccessKeyID:     parsed.accessKeyID,
+		SecretAccessKey: parsed.secretAccessKey,
+		SessionToken:    parsed.sessionToken,
+		Region:          region,
+		Profile:         parsed.profile,
+		DefaultRegion:   "us-east-1",
+	}.LoadConfig(ctx)
 }
 
 func createGCSClient(ctx context.Context, parsed *parsedBlobstoreURI) (*storage.Client, error) {
@@ -1374,6 +1367,8 @@ type parsedBlobstoreURI struct {
 	provider                      Provider
 	accessKeyID                   string
 	secretAccessKey               string
+	sessionToken                  string
+	profile                       string
 	region                        string
 	endpointURL                   string
 	s3FileDiscovery               s3FileDiscovery
@@ -1448,6 +1443,8 @@ func parseS3BlobstoreURIOptions(u *url.URL, parsed *parsedBlobstoreURI) error {
 	q := u.Query()
 	parsed.accessKeyID = q.Get("access_key_id")
 	parsed.secretAccessKey = q.Get("secret_access_key")
+	parsed.sessionToken = q.Get("session_token")
+	parsed.profile = q.Get("profile")
 	parsed.region = q.Get("region")
 	parsed.endpointURL = q.Get("endpoint_url")
 

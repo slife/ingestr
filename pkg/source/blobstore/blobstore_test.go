@@ -1030,3 +1030,32 @@ func TestItemsToArrowRecordWithExclude(t *testing.T) {
 	}
 	assert.False(t, hasSecret)
 }
+
+func TestParseS3URICredentials(t *testing.T) {
+	parsed, err := parseBlobstoreURI("s3://?access_key_id=AKID&secret_access_key=SECRET&session_token=TOK&region=eu-west-1&profile=prod")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if parsed.accessKeyID != "AKID" || parsed.secretAccessKey != "SECRET" {
+		t.Fatalf("keys = %q/%q", parsed.accessKeyID, parsed.secretAccessKey)
+	}
+	if parsed.sessionToken != "TOK" {
+		t.Fatalf("sessionToken = %q, want TOK", parsed.sessionToken)
+	}
+	if parsed.profile != "prod" {
+		t.Fatalf("profile = %q, want prod", parsed.profile)
+	}
+	if parsed.region != "eu-west-1" {
+		t.Fatalf("region = %q, want eu-west-1", parsed.region)
+	}
+}
+
+func TestParseS3URINoCredentials(t *testing.T) {
+	parsed, err := parseBlobstoreURI("s3://mybucket")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if parsed.accessKeyID != "" || parsed.secretAccessKey != "" || parsed.sessionToken != "" {
+		t.Fatalf("expected empty creds, got %#v", parsed)
+	}
+}
