@@ -82,6 +82,16 @@ func TestParseSQSURI(t *testing.T) {
 	}
 }
 
+func TestParseSQSURIProfile(t *testing.T) {
+	cfg, err := parseSQSURI("sqs://?region=us-east-1&profile=prod")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.Profile != "prod" {
+		t.Fatalf("Profile = %q, want prod", cfg.Profile)
+	}
+}
+
 func TestQueueTableName(t *testing.T) {
 	if got := queueTableName("https://sqs.us-east-1.amazonaws.com/123456789012/orders"); got != "orders" {
 		t.Fatalf("queueTableName = %q", got)
