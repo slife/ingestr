@@ -345,6 +345,48 @@ func TestGenerateS3Secret_MinIO(t *testing.T) {
 	}
 }
 
+func TestParseLakehouseURIS3KeylessAllowed(t *testing.T) {
+	cfg, err := ParseLakehouseURI("ducklake://?catalog_type=sqlite&catalog_path=/tmp/c.db&storage_type=s3&storage_path=s3://bucket/data")
+	if err != nil {
+		t.Fatalf("keyless S3 storage should be allowed, got: %v", err)
+	}
+	if cfg.Storage.AccessKey != "" || cfg.Storage.SecretKey != "" {
+		t.Fatalf("expected empty storage keys")
+	}
+}
+
+func TestParseLakehouseURIGCSStillRequiresKeys(t *testing.T) {
+	_, err := ParseLakehouseURI("ducklake://?catalog_type=sqlite&catalog_path=/tmp/c.db&storage_type=gcs&storage_path=gs://bucket/data")
+	if err == nil {
+		t.Fatal("keyless GCS storage should still be rejected")
+	}
+}
+
+func TestGenerateS3SecretCredentialChainWhenKeyless(t *testing.T) {
+	l := NewLakehouseAttacher()
+	sql := l.generateS3Secret("ingestr_storage", StorageConfig{Type: StorageTypeS3, Path: "s3://bucket/data", Region: "us-east-1"})
+	if !strings.Contains(sql, "PROVIDER credential_chain") {
+		t.Fatalf("expected PROVIDER credential_chain, got:\n%s", sql)
+	}
+	if strings.Contains(sql, "KEY_ID") || strings.Contains(sql, "SECRET '") {
+		t.Fatalf("credential_chain secret must not embed keys, got:\n%s", sql)
+	}
+	if !strings.Contains(sql, "REGION 'us-east-1'") {
+		t.Fatalf("expected REGION preserved, got:\n%s", sql)
+	}
+}
+
+func TestGenerateS3SecretConfigWhenKeysPresent(t *testing.T) {
+	l := NewLakehouseAttacher()
+	sql := l.generateS3Secret("ingestr_storage", StorageConfig{Type: StorageTypeS3, Path: "s3://bucket/data", AccessKey: "AKID", SecretKey: "SECRET"})
+	if !strings.Contains(sql, "PROVIDER config") {
+		t.Fatalf("expected PROVIDER config, got:\n%s", sql)
+	}
+	if !strings.Contains(sql, "KEY_ID 'AKID'") || !strings.Contains(sql, "SECRET 'SECRET'") {
+		t.Fatalf("expected embedded keys, got:\n%s", sql)
+	}
+}
+
 func TestGeneratePostgresSecret(t *testing.T) {
 	t.Parallel()
 
