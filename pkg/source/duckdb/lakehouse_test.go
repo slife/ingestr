@@ -375,6 +375,9 @@ func TestGenerateS3SecretCredentialChainWhenKeyless(t *testing.T) {
 	if !strings.Contains(sql, "PROVIDER credential_chain") {
 		t.Fatalf("expected PROVIDER credential_chain, got:\n%s", sql)
 	}
+	if !strings.Contains(sql, "REFRESH auto") {
+		t.Fatalf("expected REFRESH auto, got:\n%s", sql)
+	}
 	if strings.Contains(sql, "KEY_ID") || strings.Contains(sql, "SECRET '") {
 		t.Fatalf("credential_chain secret must not embed keys, got:\n%s", sql)
 	}

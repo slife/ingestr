@@ -287,7 +287,10 @@ func (l *LakehouseAttacher) generateS3Secret(name string, st StorageConfig) stri
 		"    TYPE s3",
 	}
 	if useChain {
-		parts = append(parts, ",   PROVIDER credential_chain")
+		parts = append(parts,
+			",   PROVIDER credential_chain",
+			",   REFRESH auto",
+		)
 	} else {
 		parts = append(parts,
 			",   PROVIDER config",

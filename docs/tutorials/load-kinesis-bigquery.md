@@ -58,9 +58,9 @@ kinesis://?aws_access_key_id=<YOUR_KEY_ID>&aws_secret_access_key=<YOUR_SECRET_KE
 Parameters:
 - `aws_access_key_id` (optional): Your AWS access key
 - `aws_secret_access_key` (optional): Your AWS secret key
-- `region_name` (required): AWS region of your Kinesis stream
+- `region_name` (optional): AWS region of your Kinesis stream; omit it when your AWS environment or selected profile supplies the region
 
-`aws_access_key_id`/`aws_secret_access_key` are optional — if omitted, ingestr resolves credentials through the AWS default credential chain (environment variables, shared config profile, EKS IRSA / web-identity roles, or ECS/EC2 instance-profile roles). `region_name` is still required.
+`aws_access_key_id`/`aws_secret_access_key` are optional — if omitted, ingestr resolves credentials through the AWS default credential chain (environment variables, shared config profile, EKS IRSA / web-identity roles, or ECS/EC2 instance-profile roles). The region is taken from `region_name` first, then from the ambient environment (`AWS_REGION` or the selected profile); if neither supplies a region, ingestr returns an error.
 
 #### `--source-table`
 This flag specifies which Kinesis stream to read from:
