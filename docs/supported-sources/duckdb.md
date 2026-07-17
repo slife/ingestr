@@ -60,7 +60,7 @@ ducklake://?
   &storage_use_ssl=<true|false>                   # optional, default true
   &storage_access_key=<key>
   &storage_secret_key=<secret>
-  &storage_session_token=<token>                  # optional, AWS STS
+  &storage_session_token=<token>                  # optional; requires both storage keys
 ```
 
 All values must be URL-encoded if they contain `&`, `=`, `/`, `?` or other reserved characters.
@@ -111,10 +111,10 @@ storage_path=s3://my-ducklake-bucket/lake
 storage_region=us-east-1              # optional, DuckDB defaults to us-east-1
 storage_access_key=AKIA...             # optional
 storage_secret_key=...                 # optional
-storage_session_token=...             # optional, for AWS STS temporary credentials
+storage_session_token=...             # optional; requires both static keys
 ```
 
-When `storage_access_key`/`storage_secret_key` are omitted, DuckDB authenticates to S3 via its `credential_chain` provider, which uses the AWS default credential chain: environment variables, a shared AWS config/credentials file, EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. `storage_session_token` may still be supplied for temporary STS credentials. `storage_region` defaults to `us-east-1` when unset.
+When `storage_access_key`/`storage_secret_key` are omitted, DuckDB authenticates to S3 via its `credential_chain` provider, which uses the AWS default credential chain: environment variables, a shared AWS config/credentials file, EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. Omit `storage_session_token` in credential-chain mode; it is accepted only alongside both static keys for temporary STS credentials. `storage_region` defaults to `us-east-1` when unset.
 
 #### S3-compatible (MinIO, R2, B2, Tigris, on-prem)
 
@@ -188,6 +188,6 @@ ingestr ingest \
 | `storage_url_style` | yes for S3-compatible | `path` for MinIO, R2, B2, etc. |
 | `storage_use_ssl` | no | Set `false` for plain-HTTP local dev |
 | `storage_region` | no | DuckDB defaults to `us-east-1`; use `auto` for Cloudflare R2 |
-| `storage_session_token` | no | AWS STS temporary credentials |
+| `storage_session_token` | no | AWS STS temporary credentials; requires both static key fields |
 
 Invalid or incomplete URIs are rejected at parse time with a clear error message — no subprocess is spawned without a complete configuration.
