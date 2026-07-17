@@ -13,6 +13,11 @@ import (
 // id / secret access key is supplied.
 var ErrIncompleteStaticCredentials = errors.New("both access_key_id and secret_access_key are required when using static credentials")
 
+// ErrSessionTokenWithoutStaticCredentials is returned when a session token is
+// supplied without both static credentials. A session token only applies to
+// temporary static credentials; omit all three to use the default chain.
+var ErrSessionTokenWithoutStaticCredentials = errors.New("session_token requires both access_key_id and secret_access_key; omit all three to use the default credential chain")
+
 // Credentials is a normalized AWS credential set parsed from a connection URI.
 type Credentials struct {
 	AccessKeyID     string
@@ -33,6 +38,9 @@ type Credentials struct {
 func (c Credentials) LoadConfig(ctx context.Context) (aws.Config, error) {
 	if (c.AccessKeyID == "") != (c.SecretAccessKey == "") {
 		return aws.Config{}, ErrIncompleteStaticCredentials
+	}
+	if c.AccessKeyID == "" && c.SessionToken != "" {
+		return aws.Config{}, ErrSessionTokenWithoutStaticCredentials
 	}
 
 	var opts []func(*awsconfig.LoadOptions) error

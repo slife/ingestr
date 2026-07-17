@@ -20,7 +20,7 @@ URI parameters:
 - `profile` (optional): name of an AWS shared-config profile to use for credentials/region. You can also use `aws_profile`.
 - `endpoint_url`: optional custom endpoint, useful for LocalStack
 
-**Credentials are optional.** When `aws_access_key_id`/`aws_secret_access_key` are omitted, ingestr resolves credentials through the standard AWS default credential chain: environment variables, a shared AWS config/credentials file (optionally selected with `profile`), EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. You may also supply an `aws_session_token` for temporary STS credentials. The region is taken from the URI (`region_name`) first, then from the ambient environment (`AWS_REGION` or the selected profile); if it still cannot be resolved, ingestr returns an error, since this connector requires an explicit region.
+**Credentials are optional.** When `aws_access_key_id`/`aws_secret_access_key` are omitted, ingestr resolves credentials through the standard AWS default credential chain: environment variables, a shared AWS config/credentials file (optionally selected with `profile`), EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. When supplying static keys, you may also add an `aws_session_token` for temporary STS credentials (an `aws_session_token` on its own, without the keys, is rejected). The region is taken from the URI (`region_name`) first, then from the ambient environment (`AWS_REGION` or the selected profile); if it still cannot be resolved, ingestr returns an error, since this connector requires an explicit region.
 
 ## Setting up a Kinesis Integration
 

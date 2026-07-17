@@ -28,7 +28,7 @@ You have two ways of providing credentials:
 
 If there's no access key and secret key provided, ingestr will try to find the credentials in the local AWS credentials file.
 
-**Credentials are optional.** When `access_key_id`/`secret_access_key` are omitted, ingestr resolves credentials through the standard AWS default credential chain: environment variables, a shared AWS config/credentials file (optionally selected with `profile`), EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. You may also supply a `session_token` for temporary STS credentials. The region is taken from the URI (`region_name`) first, then from the ambient environment (`AWS_REGION` or the selected profile); if it still cannot be resolved, ingestr returns an error, since this connector requires an explicit region.
+**Credentials are optional.** When `access_key_id`/`secret_access_key` are omitted, ingestr resolves credentials through the standard AWS default credential chain: environment variables, a shared AWS config/credentials file (optionally selected with `profile`), EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. When supplying static keys, you may also add a `session_token` for temporary STS credentials (a `session_token` on its own, without the keys, is rejected). The region is taken from the URI (`region_name`) first, then from the ambient environment (`AWS_REGION` or the selected profile); if it still cannot be resolved, ingestr returns an error, since this connector requires an explicit region.
 
 ## Setting up an Athena Integration
 

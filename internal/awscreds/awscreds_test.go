@@ -45,6 +45,13 @@ func TestLoadConfig(t *testing.T) {
 		}
 	})
 
+	t.Run("session token without static credentials is an error", func(t *testing.T) {
+		_, err := Credentials{SessionToken: "TOKEN", Region: "us-east-1"}.LoadConfig(ctx)
+		if !errors.Is(err, ErrSessionTokenWithoutStaticCredentials) {
+			t.Fatalf("err = %v, want ErrSessionTokenWithoutStaticCredentials", err)
+		}
+	})
+
 	t.Run("default region applied only when region otherwise empty", func(t *testing.T) {
 		t.Setenv("AWS_REGION", "")
 		t.Setenv("AWS_DEFAULT_REGION", "")
