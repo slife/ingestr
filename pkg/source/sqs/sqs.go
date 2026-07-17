@@ -15,10 +15,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	awssqs "github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/bruin-data/ingestr/internal/awscreds"
 	"github.com/bruin-data/ingestr/internal/config"
 	"github.com/bruin-data/ingestr/pkg/arrowconv"
 	"github.com/bruin-data/ingestr/pkg/schema"
@@ -41,6 +40,7 @@ type sqsConfig struct {
 	SecretAccessKey   string
 	SessionToken      string
 	Region            string
+	Profile           string
 	EndpointURL       string
 	WaitTimeSeconds   int32
 	VisibilitySeconds int32
@@ -94,20 +94,13 @@ func (s *SQSSource) Connect(ctx context.Context, uri string) error {
 	}
 	s.cfg = cfg
 
-	loadOpts := []func(*awsconfig.LoadOptions) error{}
-	if cfg.Region != "" {
-		loadOpts = append(loadOpts, awsconfig.WithRegion(cfg.Region))
-	}
-	if cfg.AccessKeyID != "" || cfg.SecretAccessKey != "" || cfg.SessionToken != "" {
-		if cfg.AccessKeyID == "" || cfg.SecretAccessKey == "" {
-			return fmt.Errorf("sqs URI: both access_key_id and secret_access_key are required when static credentials are used")
-		}
-		loadOpts = append(loadOpts, awsconfig.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(cfg.AccessKeyID, cfg.SecretAccessKey, cfg.SessionToken),
-		))
-	}
-
-	awsCfg, err := awsconfig.LoadDefaultConfig(ctx, loadOpts...)
+	awsCfg, err := awscreds.Credentials{
+		AccessKeyID:     cfg.AccessKeyID,
+		SecretAccessKey: cfg.SecretAccessKey,
+		SessionToken:    cfg.SessionToken,
+		Region:          cfg.Region,
+		Profile:         cfg.Profile,
+	}.LoadConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load AWS config: %w", err)
 	}
@@ -212,6 +205,7 @@ func parseSQSURI(raw string) (sqsConfig, error) {
 		SecretAccessKey:   firstQuery(q, "secret_access_key", "aws_secret_access_key"),
 		SessionToken:      firstQuery(q, "session_token", "aws_session_token"),
 		Region:            firstQuery(q, "region", "region_name", "aws_region"),
+		Profile:           firstQuery(q, "profile", "aws_profile"),
 		EndpointURL:       firstQuery(q, "endpoint_url", "endpoint"),
 		WaitTimeSeconds:   defaultWaitTimeSeconds,
 		VisibilitySeconds: defaultVisibilitySeconds,

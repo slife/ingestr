@@ -16,9 +16,9 @@ athena://?bucket=<your-destination-bucket> \
 ```
 URI parameters:
 - `bucket` (required): The name of the bucket where the data will be stored, containing the Parquet files that Athena will work with, e.g. `your_bucket_name` or `s3://your_bucket_name`.
-- `access_key_id` and `secret_access_key` (required): These are AWS credentials that will be used to authenticate with AWS services like S3 and Athena.
+- `access_key_id` and `secret_access_key` (optional): These are AWS credentials that will be used to authenticate with AWS services like S3 and Athena.
 - `session_token` (optional): The session token for temporary credentials.
-- `region_name` (required if there's no local profile found): The AWS region of the Athena service and S3 buckets, e.g. `eu-central-1`
+- `region_name` (required if it cannot be resolved from the ambient environment): The AWS region of the Athena service and S3 buckets, e.g. `eu-central-1`
 - `workgroup` (optional): The name of the Athena workgroup, e.g. `my_group`
 - `profile` (optional): The name of the AWS profile to use, e.g. `my_profile`
 
@@ -28,9 +28,11 @@ You have two ways of providing credentials:
 
 If there's no access key and secret key provided, ingestr will try to find the credentials in the local AWS credentials file.
 
+**Credentials are optional.** When `access_key_id`/`secret_access_key` are omitted, ingestr resolves credentials through the standard AWS default credential chain: environment variables, a shared AWS config/credentials file (optionally selected with `profile`), EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. When supplying static keys, you may also add a `session_token` for temporary STS credentials (a `session_token` on its own, without the keys, is rejected). The region is taken from the URI (`region_name`) first, then from the ambient environment (`AWS_REGION` or the selected profile); if it still cannot be resolved, ingestr returns an error, since this connector requires an explicit region.
+
 ## Setting up an Athena Integration
 
-Athena requires a `bucket`, `access_key_id`, `secret_access_key` and `region_name` to access the S3 bucket and run queries.
+Athena requires a `bucket` and a resolvable region; credentials are optional.
 
 ### Step 1: Create an S3 Bucket for Results
 
@@ -59,6 +61,9 @@ Athena needs a **Query result location** configured on the workgroup it runs thr
    - `AmazonAthenaFullAccess` - For Athena query access
    - `AmazonS3FullAccess` - For S3 bucket access (or create a more restrictive policy)
    - `AWSGlueConsoleFullAccess` - For Glue Catalog access
+
+> [!TIP]
+> If you're running `ingestr` on EKS or EC2, you can skip creating static access keys entirely: attach the same policies to the pod's IAM role (IRSA) or the instance profile, and omit `access_key_id`/`secret_access_key` from the URI.
 
 ### Step 4: Get Access Keys
 

@@ -53,19 +53,35 @@ func TestParseURI(t *testing.T) {
 			},
 		},
 		{
-			name:    "missing access_key_id",
+			name:    "lone secret_access_key rejected",
 			uri:     "dynamodb://dynamodb.us-east-1.amazonaws.com?secret_access_key=SECRET",
 			wantErr: true,
 		},
 		{
-			name:    "missing secret_access_key",
+			name:    "lone access_key_id rejected",
 			uri:     "dynamodb://dynamodb.us-east-1.amazonaws.com?access_key_id=AKID",
 			wantErr: true,
 		},
 		{
-			name:    "missing region",
-			uri:     "dynamodb://localhost:8000?access_key_id=AKID&secret_access_key=SECRET",
-			wantErr: true,
+			name: "no keys resolves via default chain",
+			uri:  "dynamodb://dynamodb.us-east-1.amazonaws.com",
+			check: func(t *testing.T, cfg *dynamodbutil.Config) {
+				if cfg.AccessKeyID != "" || cfg.SecretAccessKey != "" {
+					t.Errorf("expected empty creds, got %q/%q", cfg.AccessKeyID, cfg.SecretAccessKey)
+				}
+				if cfg.Region != "us-east-1" {
+					t.Errorf("Region = %q, want us-east-1", cfg.Region)
+				}
+			},
+		},
+		{
+			name: "no region parses; region enforced at client build",
+			uri:  "dynamodb://localhost:8000?access_key_id=AKID&secret_access_key=SECRET",
+			check: func(t *testing.T, cfg *dynamodbutil.Config) {
+				if cfg.Region != "" {
+					t.Errorf("Region = %q, want empty", cfg.Region)
+				}
+			},
 		},
 		{
 			name: "region in query param",

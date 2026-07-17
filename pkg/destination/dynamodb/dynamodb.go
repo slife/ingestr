@@ -52,7 +52,7 @@ func (d *DynamoDBDestination) Connect(ctx context.Context, uri string) error {
 	}
 
 	d.client = client
-	config.Debug("[DYNAMODB DEST] Connected to region: %s", dbCfg.Region)
+	config.Debug("[DYNAMODB DEST] Connected to region: %s", client.Options().Region)
 	return nil
 }
 

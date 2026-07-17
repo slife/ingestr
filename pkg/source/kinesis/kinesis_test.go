@@ -53,19 +53,35 @@ func TestParseKinesisURI(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "missing access key",
+			name:    "lone secret key rejected",
 			uri:     "kinesis://?aws_secret_access_key=SECRET&region_name=us-east-1",
 			wantErr: true,
 		},
 		{
-			name:    "missing secret key",
+			name:    "lone access key rejected",
 			uri:     "kinesis://?aws_access_key_id=AKID&region_name=us-east-1",
 			wantErr: true,
 		},
 		{
-			name:    "missing region",
-			uri:     "kinesis://?aws_access_key_id=AKID&aws_secret_access_key=SECRET",
-			wantErr: true,
+			name: "no keys resolves via default chain",
+			uri:  "kinesis://?region_name=us-east-1",
+			check: func(t *testing.T, c kinesisCredentials) {
+				if c.AccessKeyID != "" || c.SecretAccessKey != "" {
+					t.Errorf("expected empty creds, got %#v", c)
+				}
+				if c.Region != "us-east-1" {
+					t.Errorf("Region = %q, want us-east-1", c.Region)
+				}
+			},
+		},
+		{
+			name: "no region parses; region enforced at client build",
+			uri:  "kinesis://?aws_access_key_id=AKID&aws_secret_access_key=SECRET",
+			check: func(t *testing.T, c kinesisCredentials) {
+				if c.Region != "" {
+					t.Errorf("Region = %q, want empty", c.Region)
+				}
+			},
 		},
 	}
 

@@ -34,9 +34,6 @@ func parseAthenaConfig(rawURI string) (athenaConfig, error) {
 	}
 	cfg.OutputLocation = outputLocation
 
-	if cfg.Profile == "" && cfg.AccessKeyID == "" && cfg.SecretAccessKey == "" && cfg.SessionToken == "" {
-		return athenaConfig{}, errors.New("athena uri: provide either access_key_id/secret_access_key (optional session_token) or profile")
-	}
 	if (cfg.AccessKeyID == "") != (cfg.SecretAccessKey == "") {
 		return athenaConfig{}, errors.New("athena uri: both access_key_id and secret_access_key are required when using static credentials")
 	}

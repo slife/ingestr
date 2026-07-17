@@ -13,17 +13,18 @@ kinesis://?aws_access_key_id=<aws-access-key-id>&aws_secret_access_key=<aws-secr
 ``` 
 
 URI parameters:
-- `aws_access_key_id`: the AWS access key ID used to authenticate the request
-- `aws_secret_access_key`: the AWS secret access key used to authenticate the request
+- `aws_access_key_id` (optional): the AWS access key ID used to authenticate the request
+- `aws_secret_access_key` (optional): the AWS secret access key used to authenticate the request
 - `aws_session_token`: optional AWS session token
 - `region_name`: the AWS region name where the stream is located
+- `profile` (optional): name of an AWS shared-config profile to use for credentials/region. You can also use `aws_profile`.
 - `endpoint_url`: optional custom endpoint, useful for LocalStack
 
-
+**Credentials are optional.** When `aws_access_key_id`/`aws_secret_access_key` are omitted, ingestr resolves credentials through the standard AWS default credential chain: environment variables, a shared AWS config/credentials file (optionally selected with `profile`), EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. When supplying static keys, you may also add an `aws_session_token` for temporary STS credentials (an `aws_session_token` on its own, without the keys, is rejected). The region is taken from the URI (`region_name`) first, then from the ambient environment (`AWS_REGION` or the selected profile); if it still cannot be resolved, ingestr returns an error, since this connector requires an explicit region.
 
 ## Setting up a Kinesis Integration
 
-To access Amazon Kinesis, you need AWS credentials with appropriate permissions.
+To access Amazon Kinesis, you can use AWS credentials with appropriate permissions, or rely on the AWS default credential chain / IRSA (see [URI format](#uri-format)) instead of static keys.
 
 ### Step 1: Create an IAM User (if needed)
 

@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/athena"
 	"github.com/aws/aws-sdk-go-v2/service/athena/types"
+	"github.com/bruin-data/ingestr/internal/awscreds"
 	"github.com/bruin-data/ingestr/internal/config"
 	"github.com/bruin-data/ingestr/pkg/schema"
 	"github.com/bruin-data/ingestr/pkg/source"
@@ -45,21 +44,13 @@ func (s *AthenaSource) Connect(ctx context.Context, rawURI string) error {
 		return err
 	}
 
-	var loadOpts []func(*awsconfig.LoadOptions) error
-	if cfg.Profile != "" {
-		loadOpts = append(loadOpts, awsconfig.WithSharedConfigProfile(cfg.Profile))
-	}
-	if cfg.Region != "" {
-		loadOpts = append(loadOpts, awsconfig.WithRegion(cfg.Region))
-	}
-	if cfg.AccessKeyID != "" || cfg.SecretAccessKey != "" || cfg.SessionToken != "" {
-		if cfg.AccessKeyID == "" || cfg.SecretAccessKey == "" {
-			return errors.New("athena uri: both access_key_id and secret_access_key are required when using static credentials")
-		}
-		loadOpts = append(loadOpts, awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.AccessKeyID, cfg.SecretAccessKey, cfg.SessionToken)))
-	}
-
-	awsCfg, err := awsconfig.LoadDefaultConfig(ctx, loadOpts...)
+	awsCfg, err := awscreds.Credentials{
+		AccessKeyID:     cfg.AccessKeyID,
+		SecretAccessKey: cfg.SecretAccessKey,
+		SessionToken:    cfg.SessionToken,
+		Region:          cfg.Region,
+		Profile:         cfg.Profile,
+	}.LoadConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load aws config: %w", err)
 	}

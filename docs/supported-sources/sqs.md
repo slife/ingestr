@@ -13,6 +13,7 @@ sqs://?region=<region>
 URI parameters:
 - `access_key_id` / `secret_access_key`: Optional AWS static credentials. You can also use `aws_access_key_id` / `aws_secret_access_key`.
 - `session_token`: Optional AWS session token. You can also use `aws_session_token`.
+- `profile`: Optional name of an AWS shared-config profile to use for credentials/region. You can also use `aws_profile`.
 - `region`: AWS region for the queue. You can also use `region_name` or `aws_region`.
 - `endpoint_url`: Optional custom endpoint, useful for LocalStack.
 - `visibility_timeout`: Optional message visibility timeout in seconds while ingestr buffers records. Defaults to 300.
@@ -22,7 +23,7 @@ The `--source-table` value is the queue name. A full queue URL is also accepted.
 
 ## Authentication
 
-When no static credentials are provided in the URI, ingestr uses the AWS SDK default credential chain. That supports environment variables, shared AWS config and credentials files, web identity credentials, and IAM role credentials on EC2, ECS, EKS, and similar AWS runtimes.
+**Credentials are optional.** When no static credentials are provided in the URI, ingestr resolves credentials through the standard AWS default credential chain: environment variables, a shared AWS config/credentials file (optionally selected with `profile`), EKS IRSA / web-identity roles, and ECS/EC2 instance-profile roles. The region is taken from the URI (`region`/`region_name`/`aws_region`) first, then from the ambient environment (`AWS_REGION` or the selected profile); if it still cannot be resolved, ingestr returns an error, since this connector requires an explicit region.
 
 Static credentials can still be provided explicitly:
 

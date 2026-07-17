@@ -7,9 +7,8 @@ import (
 	"regexp"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/bruin-data/ingestr/internal/awscreds"
 )
 
 var awsEndpointPattern = regexp.MustCompile(`.*\.(.+)\.amazonaws\.com`)
@@ -18,6 +17,8 @@ type Config struct {
 	Region          string
 	AccessKeyID     string
 	SecretAccessKey string
+	SessionToken    string
+	Profile         string
 	EndpointURL     string
 }
 
@@ -32,6 +33,8 @@ func ParseURI(uri string) (*Config, error) {
 	cfg := &Config{
 		AccessKeyID:     query.Get("access_key_id"),
 		SecretAccessKey: query.Get("secret_access_key"),
+		SessionToken:    query.Get("session_token"),
+		Profile:         query.Get("profile"),
 	}
 
 	if matches := awsEndpointPattern.FindStringSubmatch(u.Host); matches != nil {
@@ -45,29 +48,26 @@ func ParseURI(uri string) (*Config, error) {
 		cfg.Region = query.Get("region")
 	}
 
-	if cfg.Region == "" {
-		return nil, fmt.Errorf("region is required to connect to DynamoDB")
-	}
-	if cfg.AccessKeyID == "" {
-		return nil, fmt.Errorf("access_key_id is required to connect to DynamoDB")
-	}
-	if cfg.SecretAccessKey == "" {
-		return nil, fmt.Errorf("secret_access_key is required to connect to DynamoDB")
+	if (cfg.AccessKeyID == "") != (cfg.SecretAccessKey == "") {
+		return nil, fmt.Errorf("both access_key_id and secret_access_key are required when using static credentials")
 	}
 
 	return cfg, nil
 }
 
 func NewClient(ctx context.Context, cfg *Config) (*dynamodb.Client, error) {
-	awsCfg, err := awsconfig.LoadDefaultConfig(
-		ctx,
-		awsconfig.WithRegion(cfg.Region),
-		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			cfg.AccessKeyID, cfg.SecretAccessKey, "",
-		)),
-	)
+	awsCfg, err := awscreds.Credentials{
+		AccessKeyID:     cfg.AccessKeyID,
+		SecretAccessKey: cfg.SecretAccessKey,
+		SessionToken:    cfg.SessionToken,
+		Region:          cfg.Region,
+		Profile:         cfg.Profile,
+	}.LoadConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+	if awsCfg.Region == "" {
+		return nil, fmt.Errorf("region is required to connect to DynamoDB")
 	}
 
 	client := dynamodb.NewFromConfig(awsCfg, func(o *dynamodb.Options) {
